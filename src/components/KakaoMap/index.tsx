@@ -9,6 +9,12 @@ declare global {
     kakao: any;
   }
 }
+// const geocoder = new window.kakao.maps.services.Geocoder();
+
+// const searchDetailAddressFromCoord = (coords: kakao.maps.LatLng) =>
+//   geocoder.coord2Address(coords.getLng(), coords.getLat());
+
+// console.log(searchDetailAddressFromCoord)
 
 const dummyBasketballCourts = [
   {
@@ -84,6 +90,10 @@ const KakaoMap = ({ onMarkerClick }: any): JSX.Element => {
     if (!mapRef.current) {
       return;
     }
+    if (typeof window === "undefined") {
+      console.log("window is undefined");
+      return;
+    }
 
     window.kakao.maps.load(() => {
       const options = {
@@ -91,11 +101,11 @@ const KakaoMap = ({ onMarkerClick }: any): JSX.Element => {
         level: 3,
       };
 
-      getCurrentLocation(([latitude, longitude]: Coord) => {
-        const newMap = new window.kakao.maps.Map(mapRef.current, options);
-        newMap.setCenter(new kakao.maps.LatLng(latitude, longitude));
-        setMap(newMap);
-      });
+      const newMap = new window.kakao.maps.Map(mapRef.current, options);
+      setMap(newMap);
+      // getCurrentLocation(([latitude, longitude]: Coord) => {
+      //   newMap.setCenter(new kakao.maps.LatLng(latitude, longitude));
+      // });
     });
   }, []);
 
@@ -116,14 +126,15 @@ const KakaoMap = ({ onMarkerClick }: any): JSX.Element => {
         현재 위치를 받아오는 중입니다.
       </div>
       <div id="result"></div>
-      {dummyBasketballCourts.map((court) => (
-        <KakaoMapMarker
-          key={court.name}
-          map={map}
-          court={court}
-          onClick={onMarkerClick}
-        />
-      ))}
+      {map &&
+        dummyBasketballCourts.map((court) => (
+          <KakaoMapMarker
+            key={court.name}
+            map={map}
+            court={court}
+            onClick={onMarkerClick}
+          />
+        ))}
     </>
   );
 };

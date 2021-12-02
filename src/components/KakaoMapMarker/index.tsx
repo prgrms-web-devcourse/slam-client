@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 interface Props {
   // ? undefined 허용해도 되는지?
-  map: kakao.maps.Map | undefined;
+  map: kakao.maps.Map;
   court: any; // 추후 API 명세 나오면 수정 예정
   onClick: (court: any) => void;
 }
