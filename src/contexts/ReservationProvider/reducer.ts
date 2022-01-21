@@ -1,26 +1,15 @@
-import { NextPage } from "next";
-import { useRouter } from "next/router";
-import { useCallback, useEffect, useReducer, useState, Reducer } from "react";
-import dayjs from "dayjs";
-
-import { ModalSheet, Text } from "@components/base";
+import { Reducer } from "react";
 import {
-  TimeTable,
-  ReservationModalContent as ModalContent,
-  DayOfTheWeek,
-} from "@components/domain";
-import { useAuthContext, useNavigationContext } from "@contexts/hooks";
-
-import {
-  week,
   TIME_TABLE_ROWS,
-  MAX_RESERVATION_TIME_BLOCK_UNIT,
   getTimezoneIndexFromDatetime,
-  getTimeFromIndex,
-  getISOString,
-  getIsOneHourLeft,
+  MAX_RESERVATION_TIME_BLOCK_UNIT,
 } from "@utils/date";
-import { courtApi, reservationApi } from "@service/.";
+import { actionTypes, ActionTypeUnion } from "./actionTypes";
+
+export type ReducerAction = {
+  type: ActionTypeUnion;
+  payload?: any;
+};
 
 const getTimeTableInfoFromReservations = (reservations: any, userId: any) => {
   const timeTable = Array.from({ length: TIME_TABLE_ROWS }, () => ({
@@ -67,24 +56,14 @@ const getTimeTableInfoFromReservations = (reservations: any, userId: any) => {
   );
 };
 
-const initialState = {
-  step: 1,
-  mode: "create",
-  startIndex: null,
-  endIndex: null,
-  timeTable: [],
-  originalTimeTable: [],
-  modalContentData: null,
-  hasBall: false,
-  existedReservations: [],
-  selectedReservationId: null,
-  requestDisabled: false,
-  currentInput: "START",
-};
+export const initialData = {};
 
-const reducer: Reducer<any, any> = (state, { type, payload }) => {
+export const reducer: Reducer<any, ReducerAction> = (
+  state,
+  { type, payload }
+) => {
   switch (type) {
-    case "SET_TIMETABLE": {
+    case actionTypes.SET_TIMETABLE: {
       const { reservations, userId } = payload;
 
       const { timeTable, existedReservations } =
@@ -97,7 +76,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         existedReservations,
       };
     }
-    case "START_CREATE": {
+    case actionTypes.START_CREATE: {
       return {
         ...state,
         modalContentData: [],
@@ -106,7 +85,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         currentInput: "END",
       };
     }
-    case "START_UPDATE": {
+    case actionTypes.START_UPDATE: {
       const { existedReservations, selectedReservationId } = state;
       const selectedReservation = existedReservations.find(
         ({ reservationId }: any) => reservationId === selectedReservationId
@@ -124,7 +103,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         selectedReservation,
       };
     }
-    case "DECREASE_STEP": {
+    case actionTypes.DECREASE_STEP: {
       return {
         ...state,
         step: state.step - 1,
@@ -135,7 +114,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         hasBall: false,
       };
     }
-    case "CLICK_BLOCK": {
+    case actionTypes.CLICK_BLOCK: {
       const { startIndex } = payload;
 
       return {
@@ -147,7 +126,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         modalContentData: state.timeTable[startIndex].users,
       };
     }
-    case "SET_HAS_BALL": {
+    case actionTypes.SET_HAS_BALL: {
       const { hasBall } = payload;
 
       return {
@@ -155,7 +134,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         hasBall,
       };
     }
-    case "CLICK_RESERVATION_MARKER": {
+    case actionTypes.CLICK_RESERVATION_MARKER: {
       const { existedReservations, timeTable } = state;
       const { selectedReservationId } = payload;
 
@@ -178,7 +157,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         startIndex: null,
       };
     }
-    case "SET_CURRENT_INPUT": {
+    case actionTypes.SET_CURRENT_INPUT: {
       const { currentInput } = payload;
 
       return {
@@ -186,7 +165,7 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
         currentInput,
       };
     }
-    case "SET_TIME_INDEX": {
+    case actionTypes.SET_TIME_INDEX: {
       const { user } = payload;
       let { timeIndex } = payload;
 
@@ -501,313 +480,4 @@ const reducer: Reducer<any, any> = (state, { type, payload }) => {
     default:
       return state;
   }
-};
-
-const getIsPast = (date: string) => dayjs().isAfter(date, "day");
-
-const Reservation: NextPage = () => {
-  const router = useRouter();
-  const {
-    query: { courtId, date, timeSlot },
-  } = router;
-
-  const {
-    useMountPage,
-    clearNavigationEvent,
-    setCustomButtonEvent,
-    setNavigationTitle,
-  } = useNavigationContext();
-
-  useMountPage((page) => page.COURT_RESERVATIONS);
-
-  const reservation = 
-  const [reservation, dispatch] = useReducer(reducer, initialState);
-  const {
-    startIndex,
-    endIndex,
-    mode,
-    step,
-    timeTable,
-    existedReservations,
-    requestDisabled,
-    selectedReservationId,
-    selectedReservation,
-    modalContentData,
-    hasBall,
-    currentInput,
-  } = reservation;
-
-  const [snap, setSnap] = useState(0);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-
-  const handleSetCurrentBlock = (startIndex: number) => {
-    setIsOpen(true);
-    dispatch({ type: "CLICK_BLOCK", payload: { startIndex } });
-  };
-
-  const onClose = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  const handleStartCreate = useCallback(() => {
-    // setIsOpen(false);
-    dispatch({ type: "START_CREATE" });
-  }, []);
-
-  const handleDecreaseStep = useCallback(() => {
-    setIsOpen(false);
-    dispatch({ type: "DECREASE_STEP" });
-  }, []);
-
-  const handleStartUpdate = useCallback(() => {
-    setIsOpen(false);
-    dispatch({ type: "START_UPDATE" });
-  }, []);
-
-  const handleCreateReservation = useCallback(
-    async (hasBall: boolean) => {
-      if (!date || !courtId) {
-        return;
-      }
-
-      const data = {
-        courtId: Number(courtId),
-        startTime: getISOString(date as string, startIndex),
-        endTime: getISOString(date as string, endIndex + 1),
-        hasBall,
-      };
-
-      try {
-        await reservationApi.createReservation(data);
-      } catch (error) {
-        console.error(error);
-      }
-
-      router.push("/reservations");
-    },
-    [courtId, date, endIndex, startIndex, router]
-  );
-
-  const handleUpdateReservation = useCallback(
-    async (hasBall: boolean) => {
-      if (!date || !courtId) {
-        return;
-      }
-
-      const data = {
-        courtId: Number(courtId),
-        startTime: getISOString(date as string, startIndex),
-        endTime: getISOString(date as string, endIndex + 1),
-        hasBall,
-      };
-
-      try {
-        await reservationApi.updateReservation(selectedReservationId, data);
-      } catch (error) {
-        console.error(error);
-      }
-
-      router.push("/reservations");
-    },
-    [courtId, date, endIndex, startIndex, selectedReservationId, router]
-  );
-
-  const handleDeleteReservation = useCallback(async () => {
-    try {
-      await reservationApi.deleteReservation(selectedReservationId);
-    } catch (error) {
-      console.error(error);
-    }
-
-    router.push("/reservations");
-  }, [selectedReservationId, router]);
-
-  const handleChangeHasBall = useCallback((hasBall: boolean) => {
-    dispatch({
-      type: "SET_HAS_BALL",
-      payload: { hasBall },
-    });
-  }, []);
-
-  const handleClickReservationMarker = useCallback(
-    (selectedReservationId: number) => {
-      setIsOpen(true);
-      dispatch({
-        type: "CLICK_RESERVATION_MARKER",
-        payload: { selectedReservationId },
-      });
-    },
-    []
-  );
-
-  const handleSetCurrentInput = useCallback((currentInput: string) => {
-    dispatch({
-      type: "SET_CURRENT_INPUT",
-      payload: { currentInput },
-    });
-  }, []);
-
-  const handleSetTime = useCallback(
-    (timeIndex: number) => {
-      setIsOpen(true);
-      dispatch({
-        type: "SET_TIME_INDEX",
-        payload: {
-          timeIndex,
-          user: {
-            user: currentUser,
-            avatarImgSrc: currentUser.profileImageUrl,
-          },
-        },
-      });
-    },
-    [currentUser]
-  );
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  useEffect(() => {
-    if (router.isReady && getIsPast(date as string)) {
-      alert("과거의 예약 정보는 확인할 수 없습니다.");
-      router.replace("/courts");
-    }
-
-    const el = document.querySelector("#scrolled-container");
-
-    if (router.isReady && !timeSlot) {
-      el!.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "smooth",
-      });
-    }
-  }, [router]);
-
-  useEffect(() => {
-    setNavigationTitle(<ReservationTitle date={date as string} />);
-  }, [date, setNavigationTitle]);
-
-  useEffect(() => {
-    if (step > 1) {
-      setCustomButtonEvent("취소", handleDecreaseStep);
-    } else {
-      clearNavigationEvent();
-    }
-
-    return () => clearNavigationEvent();
-  }, [step, clearNavigationEvent, setCustomButtonEvent, handleDecreaseStep]);
-
-  useEffect(() => {
-    const initReservations = async () => {
-      const { reservations } = await courtApi.getAllCourtReservationsByDate(
-        courtId as string,
-        date as string
-      );
-
-      dispatch({
-        type: "SET_TIMETABLE",
-        payload: { reservations, userId: currentUser.userId },
-      });
-    };
-
-    if (router.isReady && currentUser.userId) {
-      initReservations();
-    }
-  }, [courtId, date, currentUser.userId, router]);
-
-  return (
-    <div>
-      <TimeTable
-        isToday={dayjs().isSame(date as string, "day")}
-        timeTable={timeTable || []}
-        onClickStatusBlock={step === 1 ? handleSetCurrentBlock : handleSetTime}
-        onClickReservationMarker={
-          step === 1 ? handleClickReservationMarker : () => {}
-        }
-        startIndex={startIndex}
-        endIndex={endIndex}
-        step={step}
-        selectedReservationId={selectedReservationId}
-        existedReservations={existedReservations}
-        onClose={handleClose}
-      />
-      <ModalSheet
-        isOpen={isOpen}
-        onClose={onClose}
-        onSnap={(snap: number) => {
-          setSnap(snap);
-        }}
-        onCloseStart={() => setSnap(-1)}
-      >
-        {isOpen && step === 1 && startIndex !== null && modalContentData && (
-          <ModalContent.BlockStatus
-            snap={snap}
-            startTime={getTimeFromIndex(startIndex)}
-            endTime={getTimeFromIndex(startIndex + 1)}
-            participants={modalContentData}
-            onStartCreate={handleStartCreate}
-            availableReservation={!timeTable[startIndex].hasReservation}
-          />
-        )}
-
-        {isOpen &&
-          step === 1 &&
-          selectedReservationId !== null &&
-          modalContentData && (
-            <ModalContent.ExistedReservation
-              timeSlot={`${getTimeFromIndex(
-                selectedReservation.startIndex
-              )} - ${getTimeFromIndex(selectedReservation.endIndex + 1)}
-              `}
-              reservationId={selectedReservationId}
-              participantsPerBlock={modalContentData}
-              onDeleteReservation={handleDeleteReservation}
-              onStartUpdate={handleStartUpdate}
-              requestDisabled={getIsOneHourLeft(
-                `${date} ${getTimeFromIndex(selectedReservation.startIndex)}`
-              )}
-            />
-          )}
-        {isOpen && step === 2 && modalContentData && (
-          <ModalContent.SelectedRange
-            startTime={getTimeFromIndex(startIndex)}
-            endTime={endIndex ? getTimeFromIndex(endIndex + 1) : null}
-            currentInput={currentInput}
-            participantsPerBlock={modalContentData}
-            hasBall={hasBall}
-            requestDisabled={requestDisabled}
-            onSetCurrentInput={handleSetCurrentInput}
-            onChangeHasBall={handleChangeHasBall}
-            onSubmit={
-              mode === "create"
-                ? handleCreateReservation
-                : handleUpdateReservation
-            }
-            buttonText={
-              mode === "create" ? "에 예약하기" : "으로 예약 수정하기"
-            }
-          />
-        )}
-      </ModalSheet>
-      <div style={{ height: 320 }}></div>
-    </div>
-  );
-};
-
-export default Reservation;
-
-const ReservationTitle: React.FC<{ date: string }> = ({ date }) => {
-  const d = dayjs(date as string);
-
-  return (
-    <Text size="base">
-      {d.format("YYYY년 MM월 DD일")} (
-      <DayOfTheWeek index={d.day()} size="base">
-        {week[d.day()]}
-      </DayOfTheWeek>
-      )
-    </Text>
-  );
 };
