@@ -1,4 +1,6 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/87c0390f-8dbe-4a17-bfc3-966c79692a93/deploy-status)](https://app.netlify.com/sites/slamsapp/deploys)
+# [🔗Slam Organization](github.com/slamapp/client)로 현재 레포를 옮겼습니다
+진행중인 레포를 확인하시려면 [🔗링크](github.com/slamapp/client)를 타고 들어오세요
+
 
 <div align="center"><img src="https://user-images.githubusercontent.com/84858773/147056456-b9bf8e99-0b5b-46fe-bd86-01e9cba8e6ca.png" width="250px"></div>
 
